@@ -3,7 +3,7 @@
 
   var KEY = 'pomodoro-v2', OLD_KEY = 'pomodoro-settings-v1', ROUNDS = 4;
   var LABELS = { focus: 'Focus', short: 'Short break', long: 'Long break' };
-  var DEFAULTS = { focus: 25, short: 5, long: 15, goal: 8, auto: false, alarm: 'chime', volume: 0.6, bg: 'none', bgVolume: 0.4, notify: false,
+  var DEFAULTS = { focus: 25, short: 5, long: 15, goal: 8, auto: false, alarm: 'chime', volume: 0.6, bg: 'none', bgVolume: 0.4, notify: false, musicSync: true,
     music: {
       lastMode: 'study', lastService: 'spotify',
       playlists: {
@@ -407,9 +407,11 @@
   }
 
   function stopTicking() {
+    var wasRunning = running;
     running = false;
     ticker.stop();
     stopBg();
+    if (wasRunning) musicPause();                       // only pause music the timer was driving
   }
   function setMode(next) {
     stopTicking();
@@ -426,6 +428,7 @@
     running = true;
     ticker.start();
     syncBg();
+    musicPlay();
     renderClock(); renderFinish();
     saveTimer();
   }
@@ -670,7 +673,7 @@
     if (!m) return null;
     var type = m[1].toLowerCase(), id = m[2];
     if (!SAFE_ID.test(id)) return null;
-    return { embedUrl: 'https://open.spotify.com/embed/' + type + '/' + id + '?utm_source=generator' };
+    return { embedUrl: 'https://open.spotify.com/embed/' + type + '/' + id + '?utm_source=generator', uri: 'spotify:' + type + ':' + id };
   }
   function parseYoutubeLink(raw) {
     var s = (raw || '').trim(), id = null, isPlaylist = false;
@@ -686,7 +689,8 @@
       else if (/^[A-Za-z0-9_-]{10,12}$/.test(s)) id = s;
     }
     if (!id || !SAFE_ID.test(id)) return null;
-    return { embedUrl: 'https://www.youtube-nocookie.com/embed/' + (isPlaylist ? 'videoseries?list=' + id : id) };
+    // enablejsapi=1 lets the page send play/pause commands to the player
+    return { embedUrl: 'https://www.youtube-nocookie.com/embed/' + (isPlaylist ? 'videoseries?list=' + id + '&' : id + '?') + 'enablejsapi=1' };
   }
   function parseLink(service, raw) {
     return service === 'youtube' ? parseYoutubeLink(raw) : parseSpotifyLink(raw);
@@ -712,39 +716,104 @@
   function savedLink() { return state.settings.music.playlists[pMode][pService]; }
   function currentLink() { return savedLink() || DEFAULT_PLAYLISTS[pMode][pService]; }
 
+  /* ---- the embedded player, played and paused along with the timer ---- */
+  // YouTube takes postMessage commands (its embed URL has enablejsapi=1). Spotify goes through
+  // its official Embed iFrame API, which wraps the iframe in a small controller object.
+  var embed = { service: null, iframe: null, sp: null, spStarted: false };
+  var spApi = { api: null, loading: false, failed: false };
+
+  function loadSpotifyEmbedApi() {
+    if (spApi.api || spApi.loading || spApi.failed) return;
+    spApi.loading = true;
+    function giveUp() {                                  // fall back to a plain, uncontrolled embed
+      if (spApi.api || spApi.failed) return;
+      spApi.loading = false; spApi.failed = true; renderPlayerEmbed();
+    }
+    window.onSpotifyIframeApiReady = function (IFrameAPI) {
+      spApi.api = IFrameAPI; spApi.loading = false; renderPlayerEmbed();
+    };
+    var s = document.createElement('script');
+    s.src = 'https://open.spotify.com/embed/iframe-api/v1';
+    s.async = true;
+    s.onerror = giveUp;
+    document.head.appendChild(s);
+    setTimeout(giveUp, 8000);
+  }
+  function clearEmbed(wrap) {
+    if (embed.sp) { try { embed.sp.destroy(); } catch (e) {} }
+    wrap.querySelectorAll('iframe, .sp-host').forEach(function (n) { n.remove(); });
+    embed = { service: null, iframe: null, sp: null, spStarted: false };
+    delete wrap.dataset.src;
+  }
   function renderPlayerEmbed() {
     var wrap = $('player-embed-wrap'), raw = currentLink();
-    wrap.className = 'embed-wrap ' + pService;
-    var existing = wrap.querySelector('iframe');
-    if (!raw) {
-      if (existing) existing.remove();
-      wrap.classList.remove('has-embed');
-      $('player-empty').textContent = 'Paste a ' + SERVICE_LABEL[pService] + ' playlist or track link above to play it here.';
-      $('player-error').textContent = '';
-      return;
-    }
-    var parsed = parseLink(pService, raw);
+    var parsed = raw ? parseLink(pService, raw) : null;
+    wrap.classList.remove('spotify', 'youtube');
+    wrap.classList.add(pService);
+    $('player-error').textContent = raw && !parsed
+      ? "That doesn't look like a " + SERVICE_LABEL[pService] + ' link. Try copying the "Share" link from the app.'
+      : '';
     if (!parsed) {
-      if (existing) existing.remove();
+      clearEmbed(wrap);
       wrap.classList.remove('has-embed');
-      $('player-empty').textContent = 'Paste a ' + SERVICE_LABEL[pService] + ' playlist or track link above to play it here.';
-      $('player-error').textContent = "That doesn't look like a " + SERVICE_LABEL[pService] + ' link. Try copying the "Share" link from the app.';
+      $('player-empty').textContent = 'Paste a ' + SERVICE_LABEL[pService] + ' playlist or track link below to play it here.';
       return;
     }
-    $('player-error').textContent = '';
-    if (!existing || existing.dataset.src !== parsed.embedUrl) {
-      if (existing) existing.remove();
-      var f = document.createElement('iframe');
-      f.src = parsed.embedUrl;
-      f.dataset.src = parsed.embedUrl;
-      f.loading = 'lazy';
-      f.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope; web-share';
-      f.allowFullscreen = true;
-      f.referrerPolicy = 'strict-origin-when-cross-origin';
-      f.title = MODE_LABEL[pMode] + ' ' + SERVICE_LABEL[pService] + ' player';
-      wrap.appendChild(f);
+    if (wrap.dataset.src === parsed.embedUrl) return;   // already showing this one
+    clearEmbed(wrap);
+    if (pService === 'spotify' && !spApi.api && !spApi.failed) {
+      wrap.classList.remove('has-embed');
+      $('player-empty').textContent = 'Loading player…';
+      loadSpotifyEmbedApi();                             // calls back into renderPlayerEmbed when ready
+      return;
     }
+    wrap.dataset.src = parsed.embedUrl;
     wrap.classList.add('has-embed');
+    embed.service = pService;
+
+    if (pService === 'spotify' && spApi.api) {
+      var host = document.createElement('div');
+      host.className = 'sp-host';
+      wrap.appendChild(host);                            // replaced by Spotify's iframe
+      spApi.api.createController(host, { uri: parsed.uri, width: '100%', height: 80 }, function (ctrl) {
+        if (wrap.dataset.src !== parsed.embedUrl) { ctrl.destroy(); return; }   // switched away meanwhile
+        embed.sp = ctrl;
+        ctrl.addListener('playback_update', function (e) {
+          // once anything has played, resume() instead of play() so we don't restart the playlist
+          if (e.data && (!e.data.isPaused || e.data.position > 0)) embed.spStarted = true;
+        });
+        if (running) musicPlay();                        // switched playlist mid-session
+      });
+      return;
+    }
+    var f = document.createElement('iframe');
+    f.src = parsed.embedUrl;
+    f.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope; web-share';
+    f.allowFullscreen = true;
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    f.title = MODE_LABEL[pMode] + ' ' + SERVICE_LABEL[pService] + ' player';
+    embed.iframe = f;
+    wrap.appendChild(f);
+  }
+
+  function ytCommand(func) {
+    if (!embed.iframe || !embed.iframe.contentWindow) return;
+    embed.iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: func, args: [] }), 'https://www.youtube-nocookie.com');
+  }
+  // Called when the timer starts and stops. Does nothing when the setting is off.
+  function musicPlay() {
+    if (!state.settings.musicSync) return;
+    try {
+      if (embed.service === 'youtube') ytCommand('playVideo');
+      else if (embed.sp) { if (embed.spStarted) embed.sp.resume(); else embed.sp.play(); embed.spStarted = true; }
+    } catch (e) {}
+  }
+  function musicPause() {
+    if (!state.settings.musicSync) return;
+    try {
+      if (embed.service === 'youtube') ytCommand('pauseVideo');
+      else if (embed.sp) embed.sp.pause();
+    } catch (e) {}
   }
   function renderPlayer() {
     document.querySelectorAll('#player-modes button').forEach(function (b) {
@@ -1333,6 +1402,8 @@
   bindNumber('set-long', 'long', 1, 90);
   bindNumber('set-goal', 'goal', 0, 24);
 
+  $('set-musicsync').checked = state.settings.musicSync;
+  $('set-musicsync').addEventListener('change', function (e) { state.settings.musicSync = e.target.checked; save(); });
   $('set-auto').checked = state.settings.auto;
   $('set-auto').addEventListener('change', function (e) { state.settings.auto = e.target.checked; save(); });
   $('set-alarm').value = state.settings.alarm;

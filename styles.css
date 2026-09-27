@@ -157,8 +157,9 @@
     position: relative; width: 100%; border-radius: 14px; overflow: hidden;
     background: var(--surface); border: 1px solid var(--line);
   }
-  .embed-wrap.spotify { aspect-ratio: 460 / 352; }
-  .embed-wrap.youtube { aspect-ratio: 16 / 9; }
+  /* Small player: Spotify's slim 80px embed, and a 320px-wide YouTube video */
+  .embed-wrap.spotify { height: 80px; border: 0; border-radius: 12px; }   /* no border: Spotify needs the full 80px */
+  .embed-wrap.youtube { aspect-ratio: 16 / 9; max-width: 320px; margin: 0 auto; }
   .embed-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   .embed-empty {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -166,6 +167,9 @@
   }
   .embed-wrap.has-embed .embed-empty { display: none; }
   .player-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .player-error:empty { display: none; }
+  .music-more > summary { cursor: pointer; color: var(--muted); font-size: 14px; font-weight: 600; width: fit-content; }
+  .music-more-body { display: grid; gap: 12px; padding-top: 12px; }
 
   /* ---------- Tasks ---------- */
   .panel {
