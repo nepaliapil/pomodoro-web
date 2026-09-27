@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pomodoro login</title>
+<style>
+  :root { --bg: #EDF0F2; --ink: #1B2A33; --accent: #C9381F; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #12181C; --ink: #E9EFF2; --accent: #F0684F; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.5 "Segoe UI", system-ui, sans-serif; text-align: center; padding: 60px 20px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<p id="msg">Finishing login&hellip;</p>
+<p><a href="./">Back to Pomodoro</a></p>
+<script>
+// Spotify redirects the login popup here. Hand the result to the app window through
+// localStorage (it listens for the storage event), then close. The app checks `state`
+// against the login it started, so a stray visit to this page does nothing.
+(function () {
+  var q = new URLSearchParams(location.search);
+  var result = { code: q.get('code') || '', state: q.get('state') || '', error: q.get('error') || '' };
+  try { localStorage.setItem('pomodoro-spotify-callback', JSON.stringify(result)); } catch (e) {}
+  history.replaceState(null, '', location.pathname);   // keep the one-time code out of history
+  document.getElementById('msg').textContent = result.code
+    ? "You're logged in to Spotify. You can close this window."
+    : 'Login did not complete. You can close this window and try again.';
+  setTimeout(function () { window.close(); }, 400);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pomodoro</title>
+<meta name="description" content="A focus timer with tasks, projects, reports and a built-in music player.">
+<meta name="theme-color" content="#EDF0F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12181C" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-mode="focus">
+
+<header class="top">
+  <h1 class="brand">Pomodoro</h1>
+  <nav class="nav" aria-label="Main">
+    <button type="button" data-view="timer" aria-current="page">Timer</button>
+    <button type="button" data-view="report">Report</button>
+    <button type="button" id="open-settings">Settings</button>
+  </nav>
+</header>
+
+<div class="banner" id="other-tab" role="alert" hidden>
+  Pomodoro is also open in another tab. Use just one tab so your tasks and history don't overwrite each other.
+</div>
+
+<main>
+  <!-- ========== TIMER VIEW ========== -->
+  <section id="view-timer" class="timer-grid" aria-label="Timer, tasks and music">
+    <div class="col-timer">
+      <div class="seg" role="group" aria-label="Timer type" id="modes">
+        <button type="button" data-mode="focus" aria-pressed="true">Focus</button>
+        <button type="button" data-mode="short" aria-pressed="false">Short break</button>
+        <button type="button" data-mode="long" aria-pressed="false">Long break</button>
+      </div>
+
+      <svg class="dial" viewBox="0 0 400 400" role="img" aria-label="Dial showing the time left">
+        <g id="ticks"></g>
+        <circle class="face" cx="200" cy="200" r="168"></circle>
+        <path id="wedge" class="wedge" d=""></path>
+        <circle class="cap" cx="200" cy="200" r="9"></circle>
+      </svg>
+
+      <div class="readout">
+        <div id="time" role="timer" aria-label="Time remaining">25:00</div>
+        <p id="status">Session 1 of 4</p>
+        <div class="pips" id="pips" aria-hidden="true"></div>
+        <p id="now"></p>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="btn big" id="toggle">Start</button>
+        <button type="button" class="btn" id="reset">Reset</button>
+        <button type="button" class="btn" id="skip">Skip</button>
+      </div>
+      <p class="hint">Press Space to start or pause.</p>
+
+      <div class="seg music-modes" role="group" aria-label="Music playlist" id="player-modes">
+        <button type="button" data-pmode="study" aria-pressed="true">🎧 Study</button>
+        <button type="button" data-pmode="work" aria-pressed="false">💼 Work</button>
+        <button type="button" data-pmode="gym" aria-pressed="false">💪 Gym</button>
+      </div>
+
+      <div class="today" aria-label="Today's progress">
+        <div class="today-head"><span id="today-text"></span><span id="today-min"></span></div>
+        <div class="bar" id="today-barwrap"><span id="today-bar" style="width:0%"></span></div>
+      </div>
+    </div>
+
+    <div class="col-side">
+    <div class="panel" aria-label="Tasks">
+      <div class="tasks-head">
+        <h2>Tasks</h2>
+        <div class="head-actions">
+          <button type="button" class="btn small" id="pr-toggle" aria-expanded="false" aria-controls="projects">Projects</button>
+          <button type="button" class="btn small" id="tpl-toggle" aria-expanded="false" aria-controls="templates">Templates</button>
+        </div>
+      </div>
+
+      <div class="plan">
+        <span id="pomos">Pomos 0/0</span>
+        <span id="finish"></span>
+      </div>
+
+      <form class="add-form" id="add-form" autocomplete="off">
+        <input class="field" id="add-title" type="text" maxlength="120" placeholder="What are you working on?" aria-label="Task name">
+        <input class="field" id="add-est" type="number" min="1" max="24" value="1" inputmode="numeric" aria-label="Estimated pomodoros">
+        <button type="submit" class="btn small solid">Add task</button>
+      </form>
+      <div class="add-extra">
+        <select class="field" id="add-project" aria-label="Project" hidden></select>
+        <button type="button" class="link" id="add-template">Save as template</button>
+      </div>
+
+      <div id="projects" hidden>
+        <h3>Projects</h3>
+        <form class="proj-form" id="proj-form" autocomplete="off">
+          <input class="field" id="proj-name" type="text" maxlength="60" placeholder="New project name" aria-label="New project name">
+          <button type="submit" class="btn small">Add project</button>
+        </form>
+        <ul class="tpl-list" id="proj-list"></ul>
+      </div>
+
+      <div id="templates" hidden>
+        <h3>Templates</h3>
+        <ul class="tpl-list" id="tpl-list"></ul>
+      </div>
+
+      <ul class="task-list" id="task-list"></ul>
+
+      <div class="clear-row" id="clear-row">
+        <button type="button" class="link" id="clear-done">Clear finished tasks</button>
+        <button type="button" class="link danger" id="clear-all">Clear all tasks</button>
+      </div>
+    </div>
+
+    <!-- Music player, on the same page as the timer so it keeps playing while you work -->
+    <section class="panel player" id="player" aria-label="Music">
+    <div class="tasks-head">
+      <h2>Music <span class="mode-label" id="player-mode-label"></span></h2>
+      <div class="seg" role="group" aria-label="Service" id="player-services">
+        <button type="button" data-pservice="spotify" aria-pressed="true">Spotify</button>
+        <button type="button" data-pservice="youtube" aria-pressed="false">YouTube</button>
+      </div>
+    </div>
+    <!-- Sign-in: one box per service, shown for the selected service -->
+    <div class="sub-box connect-row" id="sp-connect" hidden>
+      <p class="player-note">Log in to Spotify to play your own playlists.</p>
+      <button type="button" class="btn small solid" id="sp-connect-btn">Log in with Spotify</button>
+    </div>
+    <div class="sub-box" id="sp-connected" hidden>
+      <div class="connect-row">
+        <span class="player-note">Spotify connected</span>
+        <button type="button" class="link danger" id="sp-disconnect-btn">Log out</button>
+      </div>
+      <select class="field" id="sp-playlist-select" aria-label="Your Spotify playlists">
+        <option value="">Loading your playlists&hellip;</option>
+      </select>
+    </div>
+
+    <div class="sub-box connect-row" id="yt-connect" hidden>
+      <p class="player-note">Log in with Google to play your own YouTube playlists.</p>
+      <button type="button" class="btn small solid" id="yt-connect-btn">Log in with YouTube</button>
+    </div>
+    <div class="sub-box" id="yt-connected" hidden>
+      <div class="connect-row">
+        <span class="player-note">YouTube connected</span>
+        <button type="button" class="link danger" id="yt-disconnect-btn">Log out</button>
+      </div>
+      <select class="field" id="yt-playlist-select" aria-label="Your YouTube playlists">
+        <option value="">Loading your playlists&hellip;</option>
+      </select>
+    </div>
+
+    <form class="player-link-row" id="player-link-form" autocomplete="off">
+      <input class="field" id="player-link" type="text" placeholder="Paste your own playlist link (optional)" aria-label="Playlist link">
+      <button type="submit" class="btn small solid">Save</button>
+      <button type="button" class="btn small" id="player-clear" title="Go back to the built-in playlist">Use default</button>
+    </form>
+    <p class="player-error" id="player-error" role="alert"></p>
+
+    <div class="embed-wrap" id="player-embed-wrap">
+      <div class="embed-empty" id="player-empty">Paste a playlist link above to play it here.</div>
+    </div>
+
+    <div class="player-foot">
+      <p class="player-note" id="player-note"></p>
+      <a class="link" id="player-find" href="#" target="_blank" rel="noopener">Find playlists</a>
+    </div>
+    </section>
+    </div>
+  </section>
+
+  <!-- ========== REPORT VIEW ========== -->
+  <section id="view-report" class="report" hidden aria-label="Report">
+    <div class="report-head">
+      <h2>Report</h2>
+      <div class="seg" role="group" aria-label="Report period" id="range-types">
+        <button type="button" data-range="week" aria-pressed="true">Week</button>
+        <button type="button" data-range="month" aria-pressed="false">Month</button>
+        <button type="button" data-range="year" aria-pressed="false">Year</button>
+      </div>
+    </div>
+
+    <div class="range-nav">
+      <button type="button" class="btn small" id="range-prev" aria-label="Previous period">&larr;</button>
+      <span id="range-label"></span>
+      <button type="button" class="btn small" id="range-next" aria-label="Next period">&rarr;</button>
+      <button type="button" class="link" id="range-today">Back to this period</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="num" id="st-focused">0m</div><div class="lbl">Time focused</div></div>
+      <div class="stat"><div class="num" id="st-pomos">0</div><div class="lbl">Pomodoros</div></div>
+      <div class="stat"><div class="num" id="st-days">0</div><div class="lbl">Days focused</div></div>
+      <div class="stat"><div class="num" id="st-streak">0</div><div class="lbl">Day streak</div></div>
+    </div>
+
+    <div class="panel"><div id="chart"></div></div>
+
+    <div>
+      <h3>Focus time by task</h3>
+      <ul class="by-task" id="by-task"></ul>
+    </div>
+
+    <div id="proj-section">
+      <h3>Focus time by project</h3>
+      <ul class="by-task" id="by-project"></ul>
+    </div>
+
+    <div>
+      <h3>Sessions</h3>
+      <div id="sessions"></div>
+    </div>
+
+    <div class="report-actions">
+      <button type="button" class="btn small" id="export-open">Export CSV</button>
+      <button type="button" class="link danger" id="clear-history">Clear all history</button>
+    </div>
+  </section>
+</main>
+
+<!-- ========== SETTINGS ========== -->
+<dialog id="settings" aria-labelledby="settings-title">
+  <h2 id="settings-title">Settings</h2>
+  <div class="settings">
+    <div class="durations">
+      <label class="stack">Focus (min)
+        <input class="field" type="number" id="set-focus" min="1" max="120" inputmode="numeric">
+      </label>
+      <label class="stack">Short break (min)
+        <input class="field" type="number" id="set-short" min="1" max="60" inputmode="numeric">
+      </label>
+      <label class="stack">Long break (min)
+        <input class="field" type="number" id="set-long" min="1" max="90" inputmode="numeric">
+      </label>
+    </div>
+    <label class="stack">Daily goal (pomodoros, 0 to turn off)
+      <input class="field" type="number" id="set-goal" min="0" max="24" inputmode="numeric">
+    </label>
+    <label class="check"><input type="checkbox" id="set-auto"> Start the next timer automatically</label>
+    <div class="sound-row">
+      <label class="stack">Alarm sound
+        <select class="field" id="set-alarm">
+          <option value="chime">Chime</option>
+          <option value="bell">Bell</option>
+          <option value="beep">Beep</option>
+          <option value="none">None</option>
+        </select>
+      </label>
+      <button type="button" class="btn small" id="alarm-preview">Preview</button>
+    </div>
+    <label class="stack">Alarm volume
+      <input type="range" id="set-volume" min="0" max="100" step="5">
+    </label>
+    <div class="sound-row">
+      <label class="stack">Background sound (plays during focus only)
+        <select class="field" id="set-bg">
+          <option value="none">None</option>
+          <option value="tick">Ticking, slow</option>
+          <option value="tickfast">Ticking, fast</option>
+          <option value="white">White noise</option>
+          <option value="brown">Brown noise</option>
+        </select>
+      </label>
+      <button type="button" class="btn small" id="bg-preview">Preview</button>
+    </div>
+    <label class="stack">Background volume
+      <input type="range" id="set-bgvol" min="0" max="100" step="5">
+    </label>
+    <label class="check"><input type="checkbox" id="set-notify"> Show a notification when a timer ends</label>
+    <p class="hint" id="notify-hint" hidden></p>
+    <p class="hint">Music (Spotify/YouTube playlists for Study, Work and Gym) is set up in the Music panel on the Timer page.</p>
+    <div class="data-box">
+      <h3>Your data</h3>
+      <p class="hint">Everything is stored in this browser only. Back it up to move it to another browser or device.</p>
+      <div class="data-actions">
+        <button type="button" class="btn small" id="backup-download">Download backup</button>
+        <button type="button" class="btn small" id="backup-restore">Restore backup</button>
+        <button type="button" class="btn small" id="csv-import">Import history CSV</button>
+      </div>
+      <input type="file" id="backup-file" accept=".json,application/json" hidden>
+      <input type="file" id="csv-file" accept=".csv,text/csv" hidden>
+      <p class="hint" id="data-msg" role="status"></p>
+    </div>
+  </div>
+  <div class="dialog-actions">
+    <button type="button" class="btn small solid" id="settings-close">Done</button>
+  </div>
+</dialog>
+
+<!-- ========== EXPORT ========== -->
+<dialog id="export" aria-labelledby="export-title">
+  <h2 id="export-title">Export history</h2>
+  <p class="hint" style="margin-bottom:10px">One row per completed focus session.</p>
+  <textarea class="field" id="csv" readonly rows="9"></textarea>
+  <div class="dialog-actions">
+    <button type="button" class="btn small" id="csv-copy">Copy</button>
+    <button type="button" class="btn small" id="csv-download">Download .csv</button>
+    <button type="button" class="btn small solid" id="export-close">Close</button>
+  </div>
+</dialog>
+
+<div class="sr-only" aria-live="polite" id="announce"></div>
+
+<noscript><p style="text-align:center;padding:20px">Pomodoro needs JavaScript to run.</p></noscript>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

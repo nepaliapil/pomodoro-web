@@ -1,0 +1,13 @@
+{
+  "name": "Pomodoro",
+  "short_name": "Pomodoro",
+  "description": "A focus timer with tasks, projects, reports and a built-in music player.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EDF0F2",
+  "theme_color": "#C9381F",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
