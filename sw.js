@@ -1,6 +1,6 @@
 // Offline support. App files are fetched network-first, so an update shows up on the
 // next load with no version bump needed; the cache is only the offline fallback.
-const CACHE = 'pomodoro-v1';
+const CACHE = 'pomodoro-v2';
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'config.js', 'callback.html',
   'manifest.webmanifest', 'icon.svg'
@@ -25,8 +25,12 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
 
   if (url.origin === self.location.origin) {
+    // Hosts like GitHub Pages let browsers reuse files for 10 minutes, which can pair a new
+    // index.html with an old styles.css. 'no-cache' makes the browser check with the server
+    // each time (cheap: unchanged files come back as a tiny 304). Page loads can't take
+    // options, so they're fetched as-is.
     event.respondWith(
-      fetch(req)
+      (req.mode === 'navigate' ? fetch(req) : fetch(req, { cache: 'no-cache' }))
         .then((res) => {
           if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
           return res;
