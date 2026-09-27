@@ -5,24 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Pomodoro</title>
 <meta name="description" content="A focus timer with tasks, projects, reports and a built-in music player.">
-<meta name="theme-color" content="#EDF0F2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#12181C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F5F6F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1215" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body data-mode="focus">
 
 <header class="top">
-  <h1 class="brand">Pomodoro</h1>
-  <nav class="nav" aria-label="Main">
-    <button type="button" data-view="timer" aria-current="page">Timer</button>
-    <button type="button" data-view="report">Report</button>
-    <button type="button" id="open-settings">Settings</button>
-  </nav>
+  <h1 class="brand"><img src="icon.svg" alt="" width="26" height="26">Pomodoro</h1>
+  <div class="top-actions">
+    <nav class="nav" aria-label="Main">
+      <button type="button" data-view="timer" aria-current="page">Timer</button>
+      <button type="button" data-view="report">Report</button>
+    </nav>
+    <button type="button" class="icon-btn" id="open-settings" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+    </button>
+  </div>
 </header>
 
 <div class="banner" id="other-tab" role="alert" hidden>
@@ -39,24 +43,28 @@
         <button type="button" data-mode="long" aria-pressed="false">Long break</button>
       </div>
 
-      <svg class="dial" viewBox="0 0 400 400" role="img" aria-label="Dial showing the time left">
-        <g id="ticks"></g>
-        <circle class="face" cx="200" cy="200" r="168"></circle>
-        <path id="wedge" class="wedge" d=""></path>
-        <circle class="cap" cx="200" cy="200" r="9"></circle>
-      </svg>
-
-      <div class="readout">
-        <div id="time" role="timer" aria-label="Time remaining">25:00</div>
-        <p id="status">Session 1 of 4</p>
-        <div class="pips" id="pips" aria-hidden="true"></div>
-        <p id="now"></p>
+      <!-- Progress ring with the time in the middle; the arc drains as time runs out -->
+      <div class="dial">
+        <svg viewBox="0 0 300 300" aria-hidden="true">
+          <circle class="ring-track" cx="150" cy="150" r="136"></circle>
+          <circle class="ring-arc" id="ring" cx="150" cy="150" r="136"></circle>
+        </svg>
+        <div class="readout">
+          <div id="time" role="timer" aria-label="Time remaining">25:00</div>
+          <p id="status">Session 1 of 4</p>
+          <div class="pips" id="pips" aria-hidden="true"></div>
+        </div>
       </div>
+      <p id="now"></p>
 
       <div class="controls">
+        <button type="button" class="icon-btn round" id="reset" aria-label="Reset" title="Reset">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg>
+        </button>
         <button type="button" class="btn big" id="toggle">Start</button>
-        <button type="button" class="btn" id="reset">Reset</button>
-        <button type="button" class="btn" id="skip">Skip</button>
+        <button type="button" class="icon-btn round" id="skip" aria-label="Skip to next" title="Skip">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M5 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.8l-10-6.5A1 1 0 0 0 5 5.5Z"/><rect x="17.5" y="5" width="2.5" height="14" rx="1.2" fill="currentColor"/></svg>
+        </button>
       </div>
       <p class="hint">Press Space to start or pause.</p>
 

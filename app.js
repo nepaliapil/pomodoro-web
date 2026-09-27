@@ -140,32 +140,15 @@
   var audioCtx = null;
   var editingId = null, view = 'timer', rangeType = 'week', rangeOffset = 0;
 
-  var timeEl = $('time'), statusEl = $('status'), wedgeEl = $('wedge');
+  var timeEl = $('time'), statusEl = $('status'), ringEl = $('ring');
   var toggleBtn = $('toggle'), pipsEl = $('pips'), announceEl = $('announce');
 
   /* ================= dial ================= */
-  function wedgePath(f) {
-    var cx = 200, cy = 200, r = 150;
-    if (f <= 0) return '';
-    if (f >= 0.9999) {
-      return 'M ' + cx + ' ' + (cy - r) + ' A ' + r + ' ' + r + ' 0 1 1 ' + cx + ' ' + (cy + r) +
-             ' A ' + r + ' ' + r + ' 0 1 1 ' + cx + ' ' + (cy - r) + ' Z';
-    }
-    var a = f * 2 * Math.PI;
-    var x = cx + r * Math.sin(a), y = cy - r * Math.cos(a);
-    return 'M ' + cx + ' ' + cy + ' L ' + cx + ' ' + (cy - r) +
-           ' A ' + r + ' ' + r + ' 0 ' + (f > 0.5 ? 1 : 0) + ' 1 ' + x.toFixed(2) + ' ' + y.toFixed(2) + ' Z';
-  }
-  function buildTicks() {
-    var out = '';
-    for (var i = 0; i < 60; i++) {
-      var major = i % 5 === 0, a = (i / 60) * 2 * Math.PI;
-      var r1 = major ? 174 : 180, r2 = 192;
-      out += '<line class="tick" x1="' + (200 + r1 * Math.sin(a)).toFixed(2) + '" y1="' + (200 - r1 * Math.cos(a)).toFixed(2) +
-             '" x2="' + (200 + r2 * Math.sin(a)).toFixed(2) + '" y2="' + (200 - r2 * Math.cos(a)).toFixed(2) +
-             '" stroke-width="' + (major ? 3 : 1.5) + '"></line>';
-    }
-    $('ticks').innerHTML = out;
+  // The ring is a stroked circle; hiding part of its dash leaves an arc for the time left.
+  var RING_LEN = 2 * Math.PI * 136;
+  ringEl.style.strokeDasharray = RING_LEN.toFixed(2);
+  function setRing(f) {
+    ringEl.style.strokeDashoffset = (RING_LEN * (1 - Math.max(0, Math.min(1, f)))).toFixed(2);
   }
 
   /* ================= timer render ================= */
@@ -187,7 +170,7 @@
   function renderClock() {
     var t = fmtClock(remaining);
     timeEl.textContent = t;
-    wedgeEl.setAttribute('d', wedgePath(total ? remaining / total : 0));
+    setRing(total ? remaining / total : 0);
     document.title = t + ' · ' + LABELS[mode];
     toggleBtn.textContent = running ? 'Pause' : (remaining < total ? 'Resume' : 'Start');
   }
@@ -1566,7 +1549,6 @@
   }
 
   /* ================= init ================= */
-  buildTicks();
   renderProjects();
   renderTemplates();
   renderTasks();
