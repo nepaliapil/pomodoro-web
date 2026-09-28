@@ -1543,6 +1543,9 @@
     window.addEventListener('pagehide', function () { tabs.postMessage('bye'); });
   } catch (e) {}
 
+  // Inside the Windows desktop app there's nothing left to download.
+  if (/Electron\//.test(navigator.userAgent)) $('win-download').hidden = true;
+
   /* ---- "Install app" button ---- */
   // Chrome, Edge and Android fire beforeinstallprompt when the app can be installed: we keep
   // that event and show our own button, which opens the browser's install dialog. Safari has

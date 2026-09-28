@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- ?v= changes with each release so a fresh page never pairs with an old cached file -->
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body data-mode="focus">
 
@@ -246,6 +246,13 @@
   </section>
 </main>
 
+<footer class="foot">
+  <!-- "latest/download" always points at the newest release, as long as the file keeps this name -->
+  <span id="win-download"><a href="https://github.com/nepaliapil/pomodoro-web/releases/latest/download/Pomodoro-Setup-Windows.exe">Download for Windows</a>
+    <span aria-hidden="true">&middot;</span></span>
+  <a href="https://github.com/nepaliapil/pomodoro-web" target="_blank" rel="noopener">Source on GitHub</a>
+</footer>
+
 <!-- ========== SETTINGS ========== -->
 <dialog id="settings" aria-labelledby="settings-title">
   <h2 id="settings-title">Settings</h2>
@@ -341,7 +348,7 @@
 <div class="sr-only" aria-live="polite" id="announce"></div>
 
 <noscript><p style="text-align:center;padding:20px">Pomodoro needs JavaScript to run.</p></noscript>
-<script src="config.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="config.js?v=5"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

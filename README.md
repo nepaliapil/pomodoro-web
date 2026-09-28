@@ -3,6 +3,10 @@
 The web version of the Pomodoro desktop app (v1.4.1). It is plain HTML, CSS and JavaScript,
 with no framework, no build step and no dependencies. It is also an installable PWA that works offline.
 
+**Use it:** https://nepaliapil.github.io/pomodoro-web/ &nbsp;·&nbsp;
+**[Download for Windows](https://github.com/nepaliapil/pomodoro-web/releases/latest/download/Pomodoro-Setup-Windows.exe)**
+([all releases](https://github.com/nepaliapil/pomodoro-web/releases))
+
 ## Install it as a desktop or phone app
 
 Open https://nepaliapil.github.io/pomodoro-web/ and click **Install app** in the header.
