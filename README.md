@@ -14,6 +14,23 @@ Open https://nepaliapil.github.io/pomodoro-web/ and click **Install app** in the
 
 The installed app works offline and updates itself whenever a new version is published.
 
+## Windows desktop installer
+
+The `desktop/` folder packages the same web app with Electron into a Windows installer.
+
+```bash
+cd desktop
+npm install
+npm run dist
+```
+
+The installer appears at `desktop/dist/Pomodoro-Setup-<version>.exe`. Use `npm start` to try the app without
+installing it. Bump `version` in `desktop/package.json` for each new release.
+
+The desktop app serves its page from `http://127.0.0.1:47821`. The port is fixed so saved data survives restarts.
+For logins inside the desktop app, add `http://127.0.0.1:47821` to the Google client's Authorized JavaScript origins,
+and `http://127.0.0.1:47821/callback.html` to the Spotify app's Redirect URIs.
+
 ## Run it locally
 
 ```bash
