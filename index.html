@@ -9,17 +9,23 @@
 <meta name="theme-color" content="#0E1215" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- ?v= changes with each release so a fresh page never pairs with an old cached file -->
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body data-mode="focus">
 
 <header class="top">
   <h1 class="brand"><img src="icon.svg" alt="" width="26" height="26">Pomodoro</h1>
   <div class="top-actions">
+    <!-- Shown only when this browser can install the app (see "Install app" in app.js) -->
+    <button type="button" class="btn small install-btn" id="install-app" hidden>
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+      Install app
+    </button>
     <nav class="nav" aria-label="Main">
       <button type="button" data-view="timer" aria-current="page">Timer</button>
       <button type="button" data-view="report">Report</button>
@@ -322,10 +328,20 @@
   </div>
 </dialog>
 
+<!-- ========== INSTALL (Safari has no install prompt, so we explain the steps) ========== -->
+<dialog id="install-help" aria-labelledby="install-title">
+  <h2 id="install-title">Install Pomodoro</h2>
+  <ol class="install-steps" id="install-steps"></ol>
+  <p class="hint">It opens in its own window, works offline, and updates by itself.</p>
+  <div class="dialog-actions">
+    <button type="button" class="btn small solid" id="install-close">Got it</button>
+  </div>
+</dialog>
+
 <div class="sr-only" aria-live="polite" id="announce"></div>
 
 <noscript><p style="text-align:center;padding:20px">Pomodoro needs JavaScript to run.</p></noscript>
-<script src="config.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="config.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

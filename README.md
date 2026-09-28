@@ -3,6 +3,17 @@
 The web version of the Pomodoro desktop app (v1.4.1). It is plain HTML, CSS and JavaScript,
 with no framework, no build step and no dependencies. It is also an installable PWA that works offline.
 
+## Install it as a desktop or phone app
+
+Open https://nepaliapil.github.io/pomodoro-web/ and click **Install app** in the header.
+
+- **Chrome or Edge** (Windows, Mac, Linux, Chromebook, Android): the browser's install dialog opens. The app gets
+  its own window and a Start menu / Dock / home screen icon.
+- **iPhone and iPad (Safari):** Share button, then **Add to Home Screen**.
+- **Mac Safari 17+:** **File → Add to Dock**.
+
+The installed app works offline and updates itself whenever a new version is published.
+
 ## Run it locally
 
 ```bash

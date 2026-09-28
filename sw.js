@@ -1,9 +1,9 @@
 // Offline support. App files are fetched network-first, so an update shows up on the
 // next load with no version bump needed; the cache is only the offline fallback.
-const CACHE = 'pomodoro-v2';
+const CACHE = 'pomodoro-v3';
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'config.js', 'callback.html',
-  'manifest.webmanifest', 'icon.svg'
+  'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'
 ];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 

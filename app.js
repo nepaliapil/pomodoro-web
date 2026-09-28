@@ -339,7 +339,7 @@
   function notify(finished, next) {
     if (!state.settings.notify || !window.Notification || Notification.permission !== 'granted') return;
     var title = LABELS[finished] + ' finished';
-    var opts = { body: 'Up next: ' + LABELS[next] + '.', icon: 'icon.svg', tag: 'pomodoro', silent: true };
+    var opts = { body: 'Up next: ' + LABELS[next] + '.', icon: 'icon-192.png', tag: 'pomodoro', silent: true };
     try {
       if (navigator.serviceWorker && navigator.serviceWorker.controller) {
         navigator.serviceWorker.ready.then(function (reg) { reg.showNotification(title, opts); });
@@ -1543,7 +1543,44 @@
     window.addEventListener('pagehide', function () { tabs.postMessage('bye'); });
   } catch (e) {}
 
-  // Offline support and "Install app". Service workers need http(s), so skip on file://.
+  /* ---- "Install app" button ---- */
+  // Chrome, Edge and Android fire beforeinstallprompt when the app can be installed: we keep
+  // that event and show our own button, which opens the browser's install dialog. Safari has
+  // no such event, so there the button explains the Add to Home Screen / Dock steps instead.
+  // The button stays hidden when the app is already installed, and in browsers that can't install.
+  (function () {
+    var btn = $('install-app'), deferred = null, ua = navigator.userAgent;
+    var installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    var isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var isMacSafari = !isIOS && /Macintosh/.test(ua) && /Safari\//.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua);
+    if (installed) return;
+    if (isIOS || isMacSafari) btn.hidden = false;
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();                               // we show our own button instead of the browser's banner
+      deferred = e;
+      btn.hidden = false;
+    });
+    window.addEventListener('appinstalled', function () { deferred = null; btn.hidden = true; });
+
+    btn.addEventListener('click', function () {
+      if (deferred) {
+        deferred.prompt();
+        deferred.userChoice.then(function () { deferred = null; btn.hidden = true; });   // the event is single-use
+        return;
+      }
+      $('install-steps').innerHTML = isIOS
+        ? '<li>Tap the <strong>Share</strong> button (the square with an arrow).</li>' +
+          '<li>Choose <strong>Add to Home Screen</strong>, then <strong>Add</strong>.</li>'
+        : '<li>In the menu bar, choose <strong>File → Add to Dock</strong>.</li>' +
+          '<li>Click <strong>Add</strong>. (Needs Safari 17 or newer.)</li>';
+      $('install-help').showModal();
+    });
+    $('install-close').addEventListener('click', function () { $('install-help').close(); });
+  })();
+
+  // Offline support, which is also what makes the app installable. Service workers need
+  // http(s), so skip on file://.
   if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
   }
